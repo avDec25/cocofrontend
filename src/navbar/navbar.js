@@ -4,7 +4,6 @@ import { useLocation, Link } from 'react-router-dom';
 
 export default function Navbar() {
     const location = useLocation();
-    console.log(location.pathname);
     return (
         <Grid.Column>
             <Menu className='overflowing-menu'>

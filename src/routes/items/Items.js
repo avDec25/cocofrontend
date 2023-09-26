@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
-import { Button, Segment, Form, Grid, Select } from "semantic-ui-react";
+import { Segment, Form, Grid } from "semantic-ui-react";
+import { Button } from "antd";
+import { Select } from 'antd';
+import * as CONST from "../../Constants";
 import axios from 'axios';
+import toast from "react-hot-toast";
 
 export default function Items(params) {
     useEffect(() => {
-        fetch('http://localhost:8080/drop/list/id')
+        fetch(`http://${CONST.BACKEND}/drop/list/id`)
             .then(response => response.json())
             .then(json => setOptions(json))
             .catch(error => console.error(error));
@@ -26,7 +30,7 @@ export default function Items(params) {
         var options = []
         json.message.split(',').forEach((x) => {
             options.push(
-                { 'key': x, 'value': x, 'text': x }
+                { 'label': x, 'value': x }
             )
         })
         setdropIdOptions(
@@ -47,19 +51,22 @@ export default function Items(params) {
     }
 
     const submitData = () => {
-        console.log(formData);
-        axios.postForm(
-            "http://localhost:8080/item/save", 
-            formData
-        )
-        .then((response) => {
-            console.log(response.data);
-        }).catch((error) => {
-            console.log(error);
-        });
+        toast.promise(
+            axios.post(`http://${CONST.BACKEND}/item/save`, formData),
+            {
+                loading: 'Adding Item to Drop',
+                success: (response) => `Success! ${response.data.message}`,
+                error: 'Error: Could not add item',
+            }
+        );
 
-        setFormData({...initialFormData});
-        console.log(formData);
+        setFormData({
+            ...formData,
+            "name": "",
+            "costPrice": "",
+            "sellingPrice": "",
+            "shipping": ""
+        });
     }
 
     return (
@@ -67,46 +74,44 @@ export default function Items(params) {
             <Segment>
                 <Form>
                     <Form.Field>
-                        <label id="name">Name</label>
-                        <Form.Input value={formData.name} id="name" onChange={updateInputValue} />
+                        <label htmlFor="name">Name</label>
+                        <Form.Input id="name" value={formData.name} onChange={updateInputValue} />
                     </Form.Field>
 
                     <Form.Field>
-                        <label id="image">Image</label>
+                        <label htmlFor="image">Image</label>
                         <input type="file" id="image"
                             onChange={updateInputValue}
                         />
                     </Form.Field>
 
                     <Form.Field>
-                        <label id="dropId">Drop Id</label>
+                        <label htmlFor="dropId">Drop Id</label>
                         <Select
                             id="dropId"
                             placeholder='Select a Drop Id'
+                            style={{ width: '100%' }}
                             options={dropIdOptions}
                             onChange={(e, { value }) => updateDropId(e, value?.toString())}
                         />
                     </Form.Field>
 
-
                     <Form.Field>
-                        <label id="costPrice">Cost Price</label>
+                        <label htmlFor="costPrice">Cost Price</label>
                         <Form.Input value={formData.costPrice} id="costPrice" onChange={updateInputValue} />
                     </Form.Field>
 
                     <Form.Field>
-                        <label id="sellingPrice">Selling Price</label>
+                        <label htmlFor="sellingPrice">Selling Price</label>
                         <Form.Input value={formData.sellingPrice} id="sellingPrice" onChange={updateInputValue} />
                     </Form.Field>
 
                     <Form.Field>
-                        <label id="shipping">Shipping</label>
+                        <label htmlFor="shipping">Shipping</label>
                         <Form.Input value={formData.shipping} id="shipping" onChange={updateInputValue} />
                     </Form.Field>
 
-                    <Button onClick={submitData}>
-                        Save Item
-                    </Button>
+                    <Button type="primary" onClick={submitData}>Save Item</Button>
                 </Form>
             </Segment>
         </Grid.Column>

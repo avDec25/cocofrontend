@@ -7,7 +7,7 @@ import {
 import './index.css';
 import 'semantic-ui-css/semantic.min.css'
 import reportWebVitals from './reportWebVitals';
-import App from './routes/App';
+import CocoApp from './routes/CocoApp';
 
 import Customers from './routes/customers/Customers';
 import Drops from './routes/drops/Drops';
@@ -17,7 +17,7 @@ import Items from './routes/items/Items';
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <CocoApp />,
     children: [
       {
         path: "customers",
