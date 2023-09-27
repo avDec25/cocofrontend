@@ -113,7 +113,7 @@ export default function Items(params) {
                     </Form.Field>
 
                     <Space wrap>
-                        <Button onClick={() => {console.log(formData);}}>Print data</Button>
+                        {/* <Button onClick={() => {console.log(formData);}}>Print data</Button> */}
                         <Button type="primary" onClick={submitData}>Save Item</Button>
                     </Space>
                 </Form>

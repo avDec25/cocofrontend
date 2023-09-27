@@ -1,4 +1,11 @@
-import { AutoComplete, Button, Modal, Radio, Select, Space, Tag } from 'antd';
+import { Popover, AutoComplete, Button, Modal, Radio, Select, Space, Tag } from 'antd';
+import {
+    CheckCircleOutlined,
+    ExclamationCircleOutlined,
+    SyncOutlined,
+    EditOutlined,
+    SaveTwoTone
+} from '@ant-design/icons';
 import axios from 'axios';
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -262,17 +269,16 @@ export default function Orders(params) {
                 <Table celled striped>
                     <Table.Header>
                         <Table.Row>
-                            <Table.HeaderCell colSpan='8' textAlign='left'>Order History</Table.HeaderCell>
+                            <Table.HeaderCell colSpan='7' textAlign='left'>Order History</Table.HeaderCell>
                         </Table.Row>
                         <Table.Row>
                             <Table.HeaderCell textAlign='left'>Drop ID</Table.HeaderCell>
                             <Table.HeaderCell textAlign='left'>Name</Table.HeaderCell>
                             <Table.HeaderCell textAlign='center'>Image</Table.HeaderCell>
                             <Table.HeaderCell collapsing textAlign='center'>Size</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='right'>Cost Price</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='right'>Selling Price</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='right'>Shipping</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='right'>Adjusted Cost</Table.HeaderCell>
+                            <Table.HeaderCell collapsing textAlign='center'>Status</Table.HeaderCell>
+                            <Table.HeaderCell collapsing textAlign='center'>Tracking ID</Table.HeaderCell>
+                            <Table.HeaderCell collapsing textAlign='center'>Source</Table.HeaderCell>
                         </Table.Row>
                     </Table.Header>
 
@@ -283,32 +289,192 @@ export default function Orders(params) {
                                 <Table.Row key={i}>
                                     <Table.Cell collapsing textAlign='left'>{item.dropId}</Table.Cell>
                                     <Table.Cell collapsing textAlign='left'>{item.name}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='center'><img alt={`${item.image}`} height={'50px'} src={imageUrl} /></Table.Cell>
+                                    <Table.Cell collapsing textAlign='center'>
+                                        <Popover content={() => {
+                                            return (
+                                                <Table celled striped>
+                                                    <Table.Header>
+                                                        <Table.Row>
+                                                            <Table.HeaderCell textAlign='center'>Cost Price</Table.HeaderCell>
+                                                            <Table.HeaderCell textAlign='center'>Selling Price</Table.HeaderCell>
+                                                            <Table.HeaderCell textAlign='center'>Shipping</Table.HeaderCell>
+                                                            <Table.HeaderCell textAlign='center'>Adjusted Cost</Table.HeaderCell>
+                                                        </Table.Row>
+                                                    </Table.Header>
+
+                                                    <Table.Body>
+                                                        <Table.Row>
+                                                            <Table.Cell colSpan={1} textAlign="right">{item.costPrice}</Table.Cell>
+                                                            <Table.Cell colSpan={1} textAlign="right">{item.sellingPrice}</Table.Cell>
+                                                            <Table.Cell colSpan={1} textAlign="right">{item.shipping}</Table.Cell>
+                                                            <Table.Cell colSpan={1} textAlign="right">{item.adjustedCost}</Table.Cell>
+                                                        </Table.Row>
+                                                    </Table.Body>
+
+                                                    <Table.Footer>
+                                                        <Table.Row>
+                                                            <Table.HeaderCell colSpan='4' textAlign='left'>
+                                                                {
+                                                                    (Number(item.sellingPrice) + Number(item.shipping) + Number(item.adjustedCost) - Number(item.costPrice)) > 0
+                                                                        ? <span><Tag color="green">PROFIT</Tag> <strong> {Number(item.sellingPrice) + Number(item.shipping) + Number(item.adjustedCost) - Number(item.costPrice)}</strong></span>
+                                                                        : <span><Tag color="red">LOSS</Tag> <strong> {Number(item.sellingPrice) + Number(item.shipping) + Number(item.adjustedCost) - Number(item.costPrice)}</strong></span>
+                                                                }
+                                                            </Table.HeaderCell>
+                                                        </Table.Row>
+                                                    </Table.Footer>
+                                                </Table>
+                                            );
+                                        }}>
+                                            <img alt={`${item.image}`} height={'50px'} src={imageUrl} />
+                                        </Popover>
+                                    </Table.Cell>
                                     <Table.Cell collapsing textAlign='center'>{item.size}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='right'>{item.costPrice}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='right'>{item.sellingPrice}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='right'>{item.shipping}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='right'>{item.adjustedCost}</Table.Cell>
+                                    <Table.Cell collapsing textAlign='right'>
+                                        <Space wrap>
+                                            {
+                                                (item.status === 'DISPATCHED')
+                                                    ? <Tag icon={<CheckCircleOutlined />} color="success">DISPATCHED</Tag>
+                                                    : (item.status === 'IN TRANSIT')
+                                                        ? <Tag icon={<SyncOutlined spin />} color="processing">IN TRANSIT</Tag>
+                                                        : <Tag icon={<ExclamationCircleOutlined />} color="error">PENDING</Tag>
+                                            }
+                                            <Popover
+                                                trigger={'click'}
+                                                content={() => {
+                                                    return (
+                                                        <Space direction='vertical'>
+                                                            <label htmlFor="status">Status</label>
+                                                            <Space wrap direction='horizontal'>
+                                                                <Select
+                                                                    onSelect={(val) => {
+                                                                        axios.post(`http://${CONST.BACKEND}/order/update`, {
+                                                                            "itemId": item.itemId,
+                                                                            "size": item.size,
+                                                                            "customerId": formData.customerId,
+
+                                                                            "datapoint": "status",
+                                                                            "value": val
+                                                                        });
+                                                                        item.status = val;
+                                                                        orderHistory[i] = item;
+                                                                        setOrderHistory([...orderHistory])
+                                                                    }}
+                                                                    id="status"
+                                                                    name="status"
+                                                                    placeholder="Select Status"
+                                                                    options={[
+                                                                        { 'label': 'PENDING', 'value': 'PENDING' },
+                                                                        { 'label': 'IN TRANSIT', 'value': 'IN TRANSIT' },
+                                                                        { 'label': 'DISPATCHED', 'value': 'DISPATCHED' },
+                                                                    ]}
+                                                                />
+                                                            </Space>
+                                                        </Space>
+                                                    );
+                                                }}
+                                            >
+                                                <Button shape='circle' icon={<EditOutlined />} />
+                                            </Popover>
+                                        </Space>
+                                    </Table.Cell>
+
+                                    <Table.Cell collapsing textAlign='right'>
+                                        <Space wrap>
+                                            {item.trackingId}
+                                            <Popover
+                                                trigger={'click'}
+                                                content={() => {
+                                                    return (
+                                                        <Space direction='vertical'>
+                                                            <label htmlFor="tracking_id">Tracking ID</label>
+                                                            <Space wrap direction='horizontal'>
+                                                                <Form.Input 
+                                                                    placeholder="Input Tracking Id"
+                                                                    onChange={(val, {value}) => {
+                                                                        item.trackingId = value
+                                                                    }}
+                                                                />
+                                                                <Button shape='circle' icon={<SaveTwoTone />} onClick={()=>{
+                                                                    axios.post(`http://${CONST.BACKEND}/order/update`, {
+                                                                        "itemId": item.itemId,
+                                                                        "size": item.size,
+                                                                        "customerId": formData.customerId,
+
+                                                                        "datapoint": "tracking_id",
+                                                                        "value": item.trackingId
+                                                                    });
+                                                                    orderHistory[i] = item;
+                                                                    setOrderHistory([...orderHistory])
+                                                                }} />                                                                
+                                                            </Space>
+                                                        </Space>
+                                                    );
+                                                }}
+                                            >
+                                                <Button shape='circle' icon={<EditOutlined />}  />
+                                            </Popover>
+                                        </Space>
+                                    </Table.Cell>
+
+                                    <Table.Cell collapsing textAlign='right'>
+                                        <Space wrap>
+                                            {item.source}
+                                            <Popover
+                                                trigger={'click'}
+                                                content={() => {
+                                                    return (
+                                                        <Space direction='vertical'>
+                                                            <label htmlFor="source">Source</label>
+                                                            <Space wrap direction='horizontal'>
+                                                                <Form.Input
+                                                                    placeholder="Input Source"
+                                                                    onChange={(val, { value }) => {
+                                                                        item.source = value
+                                                                    }}
+                                                                />
+                                                                <Button shape='circle' icon={<SaveTwoTone />} onClick={() => {
+                                                                    axios.post(`http://${CONST.BACKEND}/order/update`, {
+                                                                        "itemId": item.itemId,
+                                                                        "size": item.size,
+                                                                        "customerId": formData.customerId,
+
+                                                                        "datapoint": "source",
+                                                                        "value": item.source
+                                                                    });
+                                                                    orderHistory[i] = item;
+                                                                    setOrderHistory([...orderHistory])
+                                                                }} />
+                                                            </Space>
+                                                        </Space>
+                                                    );
+                                                }}
+                                            >
+                                                <Button shape='circle' icon={<EditOutlined />} />
+                                            </Popover>
+                                        </Space>
+                                    </Table.Cell>
                                 </Table.Row>
                             ])
                         })}
 
                         <Table.Row>
-                            <Table.Cell colSpan={4} textAlign="right">
-                                <Space wrap>
-                                    {((totalSelling + totalAdjustedCost + totalShipping) > totalCost) ? <Tag color="green">PROFIT</Tag> : <Tag color="red">LOSS</Tag>}
-                                    Total
-                                </Space>
-                            </Table.Cell>
-                            <Table.Cell colSpan={1} textAlign="right">₹ {totalCost}</Table.Cell>
-                            <Table.Cell colSpan={1} textAlign="right">₹ {totalSelling}</Table.Cell>
-                            <Table.Cell colSpan={1} textAlign="right">₹ {totalShipping}</Table.Cell>
-                            <Table.Cell colSpan={1} textAlign="right">₹ {totalAdjustedCost}</Table.Cell>
+                            <Table.Cell colSpan={3} textAlign="right"> <strong>Total</strong> </Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalCost}         <br /><em>Cost Price</em></Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalSelling}      <br /><em>Selling Price</em></Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalShipping}     <br /><em>Shipping Cost</em></Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalAdjustedCost} <br /><em>Adjusted Cost</em></Table.Cell>
                         </Table.Row>
 
                         <Table.Row>
-                            <Table.Cell colSpan={4} textAlign="right">
-                                <strong>Grand Total</strong>
+                            <Table.Cell colSpan={3} textAlign="right">
+                                <Space wrap>
+                                    {
+                                        ((totalSelling + totalAdjustedCost + totalShipping) > totalCost)
+                                            ? <span><Tag color="green">PROFIT of <strong>{totalSelling + totalAdjustedCost + totalShipping - totalCost}</strong></Tag></span>
+                                            : <span><Tag color="red">LOSS of <strong>{totalSelling + totalAdjustedCost + totalShipping - totalCost}</strong></Tag></span>
+                                    }
+                                    <strong> Grand Total </strong>
+                                </Space>
                             </Table.Cell>
                             <Table.Cell colSpan={1} textAlign="right"><strong>₹ {totalCost}</strong></Table.Cell>
                             <Table.Cell colSpan={3} textAlign="center"><strong>₹ {totalSelling + totalAdjustedCost + totalShipping}</strong></Table.Cell>
@@ -327,7 +493,7 @@ export default function Orders(params) {
                             <Table.Row>
                                 <Table.HeaderCell textAlign='center'>Name</Table.HeaderCell>
                                 <Table.HeaderCell textAlign='center'>Image</Table.HeaderCell>
-                                <Table.HeaderCell collapsing textAlign='center'>Size</Table.HeaderCell>
+                                <Table.HeaderCell textAlign='center'>Size</Table.HeaderCell>
                                 <Table.HeaderCell collapsing textAlign='center'>Cost Price</Table.HeaderCell>
                                 <Table.HeaderCell collapsing textAlign='center'>Selling Price</Table.HeaderCell>
                                 <Table.HeaderCell collapsing textAlign='center'>Shipping</Table.HeaderCell>

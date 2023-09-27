@@ -96,9 +96,9 @@ export default function Customers(params) {
                     <Button type="primary" onClick={submitData}>Sync from Google Sheet</Button>
                 </Form>
             </Segment>
-            
-             <Segment>
-                <Form >
+
+            <Segment>
+                <Form>
                     <Form.Field>
                         <label htmlFor="customerId">Customer</label>
                         <AutoComplete
@@ -114,7 +114,6 @@ export default function Customers(params) {
                     </Form.Field>
                 </Form>
             </Segment>
-            
 
             <Segment>
                 <Table celled striped>
@@ -134,18 +133,19 @@ export default function Customers(params) {
                     </Table.Header>
 
                     <Table.Body key="customerDetails">
-                        <Table.Row>
+                        <Table.Row style={{ "overflowWrap": "break-word" }}>
                             <Table.Cell collapsing>{customerData.customerId}</Table.Cell>
-                            <Table.Cell>{customerData.name}</Table.Cell>
-                            <Table.Cell>{customerData.phone}</Table.Cell>
-                            <Table.Cell>{customerData.address}</Table.Cell>
-                            <Table.Cell>{customerData.email}</Table.Cell>
-                            <Table.Cell>{customerData.socialId}</Table.Cell>
-                            <Table.Cell>{customerData.pincode}</Table.Cell>
+                            <Table.Cell style={{ "overflowWrap": "break-word" }}>{customerData.name}</Table.Cell>
+                            <Table.Cell style={{ "overflowWrap": "break-word" }}>{customerData.phone}</Table.Cell>
+                            <Table.Cell style={{ "overflowWrap": "break-word" }}>{customerData.address}</Table.Cell>
+                            <Table.Cell style={{ "overflowWrap": "break-word" }}>{customerData.email}</Table.Cell>
+                            <Table.Cell style={{ "overflowWrap": "break-word" }}>{customerData.socialId}</Table.Cell>
+                            <Table.Cell style={{ "overflowWrap": "break-word" }}>{customerData.pincode}</Table.Cell>
                         </Table.Row>
                     </Table.Body>
                 </Table>
             </Segment>
         </Grid.Column>
+
     );
 }
