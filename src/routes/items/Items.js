@@ -1,42 +1,40 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Segment, Form, Grid } from "semantic-ui-react";
-import { Button } from "antd";
-import { Select } from 'antd';
+import { Space, Button, Select } from "antd";
 import * as CONST from "../../Constants";
 import axios from 'axios';
 import toast from "react-hot-toast";
 
 export default function Items(params) {
     useEffect(() => {
-        fetch(`http://${CONST.BACKEND}/drop/list/id`)
-            .then(response => response.json())
-            .then(json => setOptions(json))
-            .catch(error => console.error(error));
+        axios.get(`http://${CONST.BACKEND}/drop/list/id`)
+            .then((response) => {
+                var options = []
+                response.data.message.split(',').forEach((x) => {
+                    options.push(
+                        { 'label': x, 'value': x }
+                    )
+                });
+                setdropIdOptions(options);
+            }).catch(error => {
+                console.log(error);
+            })
     }, []);
+
+
 
     let initialFormData = {
         "name": "",
         "dropId": "",
+        "image": {},
         "costPrice": "",
         "sellingPrice": "",
         "shipping": "",
-        "image": ""
     };
+
 
     const [dropIdOptions, setdropIdOptions] = useState([]);
     const [formData, setFormData] = useState(initialFormData);
-
-    const setOptions = (json) => {
-        var options = []
-        json.message.split(',').forEach((x) => {
-            options.push(
-                { 'label': x, 'value': x }
-            )
-        })
-        setdropIdOptions(
-            options
-        );
-    }
 
 
     const updateInputValue = (e) => {
@@ -47,16 +45,19 @@ export default function Items(params) {
         }
     }
     const updateDropId = (e, val) => {
-        setFormData({ ...formData, 'dropId': val });
+        setFormData({ ...formData, "dropId": val });
     }
 
     const submitData = () => {
         toast.promise(
-            axios.post(`http://${CONST.BACKEND}/item/save`, formData),
+            axios.postForm(`http://${CONST.BACKEND}/item/save`, formData),
             {
                 loading: 'Adding Item to Drop',
-                success: (response) => `Success! ${response.data.message}`,
-                error: 'Error: Could not add item',
+                success: (response) => {return (`Success! ${response.data.message}`)},
+                error: (error) => {
+                    console.log(error);
+                    return "Failed to Save item";
+                }
             }
         );
 
@@ -111,7 +112,10 @@ export default function Items(params) {
                         <Form.Input value={formData.shipping} id="shipping" onChange={updateInputValue} />
                     </Form.Field>
 
-                    <Button type="primary" onClick={submitData}>Save Item</Button>
+                    <Space wrap>
+                        <Button onClick={() => {console.log(formData);}}>Print data</Button>
+                        <Button type="primary" onClick={submitData}>Save Item</Button>
+                    </Space>
                 </Form>
             </Segment>
         </Grid.Column>

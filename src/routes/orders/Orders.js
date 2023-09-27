@@ -1,10 +1,9 @@
-import React from "react";
-import { useState, useEffect } from "react";
-import { Table, Segment, Form, Grid } from "semantic-ui-react";
-import { Input, Button, Modal, Select, Space, Radio, AutoComplete, Tag } from 'antd';
-import * as CONST from "../../Constants";
+import { AutoComplete, Button, Modal, Radio, Select, Space, Tag } from 'antd';
 import axios from 'axios';
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Form, Grid, Segment, Table } from "semantic-ui-react";
+import * as CONST from "../../Constants";
 
 
 const sizeOptions = [
@@ -284,7 +283,7 @@ export default function Orders(params) {
                                 <Table.Row key={i}>
                                     <Table.Cell collapsing textAlign='left'>{item.dropId}</Table.Cell>
                                     <Table.Cell collapsing textAlign='left'>{item.name}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='center'><img height={'50px'} src={imageUrl} /></Table.Cell>
+                                    <Table.Cell collapsing textAlign='center'><img alt={`${item.image}`} height={'50px'} src={imageUrl} /></Table.Cell>
                                     <Table.Cell collapsing textAlign='center'>{item.size}</Table.Cell>
                                     <Table.Cell collapsing textAlign='right'>{item.costPrice}</Table.Cell>
                                     <Table.Cell collapsing textAlign='right'>{item.sellingPrice}</Table.Cell>
@@ -350,7 +349,7 @@ export default function Orders(params) {
                                 return ([
                                     <Table.Row key={i}>
                                         <Table.Cell collapsing textAlign='left'>{selectedItem.name}</Table.Cell>
-                                        <Table.Cell collapsing textAlign='center'><img height={'50px'} src={imageUrl} /></Table.Cell>
+                                        <Table.Cell collapsing textAlign='center'><img alt={`${selectedItem.image}`} height={'50px'} src={imageUrl} /></Table.Cell>
                                         <Table.Cell collapsing textAlign='center'>{item.size}</Table.Cell>
                                         <Table.Cell collapsing textAlign='right'>{selectedItem.costPrice}</Table.Cell>
                                         <Table.Cell collapsing textAlign='right'>{selectedItem.sellingPrice}</Table.Cell>
