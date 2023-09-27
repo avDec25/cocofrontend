@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { Table, Segment, Form, Grid } from "semantic-ui-react";
-import { Button, Modal, Select, Space, Radio, AutoComplete } from 'antd';
+import { Input, Button, Modal, Select, Space, Radio, AutoComplete, Tag } from 'antd';
 import * as CONST from "../../Constants";
 import axios from 'axios';
 import toast from "react-hot-toast";
@@ -34,21 +34,24 @@ export default function Orders(params) {
     let initialFormData = {
         "dropId": "",
         "customerId": "",
-        "items": [
-            // { "itemId": "", "size": "", "adjustedCost": "" }
-        ]
+        "items": []
     };
 
     let initialItemData = {
         "itemId": "",
         "size": "",
-        "adjustedCost": ""
+        "adjustedCost": "0"
     };
 
 
 
     const [formData, setFormData] = useState(initialFormData);
     const [itemData, setItemData] = useState(initialItemData);
+    const [orderHistory, setOrderHistory] = useState([]);
+    const [totalCost, setTotalCost] = useState(0);
+    const [totalSelling, setTotalSelling] = useState(0);
+    const [totalShipping, setTotalShipping] = useState(0);
+    const [totalAdjustedCost, setTotalAdjustedCost] = useState(0);
 
     const [dropIdOptions, setdropIdOptions] = useState([]);
     const [customerIdOptions, setCustomerIdOptions] = useState([]);
@@ -56,6 +59,7 @@ export default function Orders(params) {
 
     const [open, setOpen] = useState(false);
     const [isDisabledDropSelection, setisDisabledDropSelection] = useState(false);
+    const [isDisabledItemCreation, setIsDisabledItemCreation] = useState(false)
 
 
 
@@ -128,6 +132,38 @@ export default function Orders(params) {
     };
 
 
+
+    const handleOrderHistory = () => {
+        setIsDisabledItemCreation(true);
+        toast.promise(
+            axios.post(`http://${CONST.BACKEND}/order/history`, {
+                customerId: formData.customerId,
+                dropId: formData.dropId
+            }),
+            {
+                loading: "Loading Order History",
+                success: (response) => {
+                    setOrderHistory(response.data.message)
+                    var totalCP = 0;
+                    var totalSP = 0;
+                    var totalShipping = 0;
+                    var totalAdjustedCost = 0;
+                    response.data.message.forEach(function (item) {
+                        totalCP = totalCP + Number(item.costPrice)
+                        totalSP = totalSP + Number(item.sellingPrice)
+                        totalShipping = totalShipping + Number(item.shipping)
+                        totalAdjustedCost = totalAdjustedCost + Number(item.adjustedCost)
+                    });
+                    setTotalCost(totalCP);
+                    setTotalSelling(totalSP);
+                    setTotalShipping(totalShipping);
+                    setTotalAdjustedCost(totalAdjustedCost);
+                    return (`Loaded Order History for Customer with ID: ${formData.customerId}`);
+                },
+                error: "Error: Could not load order history",
+            }
+        )
+    }
     const submitData = () => {
         toast.promise(
             axios.post(`http://${CONST.BACKEND}/order/create`, formData),
@@ -170,10 +206,14 @@ export default function Orders(params) {
                         />
                     </Form.Field>
 
-                    <Space wrap>
-                        <Button onClick={showModal}>Add Item</Button>
-                        <Button type="primary" onClick={submitData}>Create Order</Button>
-                    </Space>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Space wrap>
+                            <Button onClick={handleOrderHistory}>Order History</Button>
+                            <Button onClick={showModal} disabled={isDisabledItemCreation}>Add Item</Button>
+                            <Button type="primary" onClick={submitData} disabled={isDisabledItemCreation}>Create Order</Button>
+                        </Space>
+                        <Button danger onClick={() => window.location.reload()}>Reset</Button>
+                    </div>
                 </Form>
 
                 <Modal
@@ -219,47 +259,112 @@ export default function Orders(params) {
                 </Modal>
             </Segment>
 
-            <Segment>
+            {orderHistory.length > 0 && <Segment>
                 <Table celled striped>
                     <Table.Header>
                         <Table.Row>
-                            <Table.HeaderCell colSpan='6' textAlign='left'>Order Summary</Table.HeaderCell>
+                            <Table.HeaderCell colSpan='8' textAlign='left'>Order History</Table.HeaderCell>
                         </Table.Row>
                         <Table.Row>
-                            <Table.HeaderCell textAlign='center'>Name</Table.HeaderCell>
+                            <Table.HeaderCell textAlign='left'>Drop ID</Table.HeaderCell>
+                            <Table.HeaderCell textAlign='left'>Name</Table.HeaderCell>
+                            <Table.HeaderCell textAlign='center'>Image</Table.HeaderCell>
                             <Table.HeaderCell collapsing textAlign='center'>Size</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='center'>Cost Price</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='center'>Selling Price</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='center'>Shipping</Table.HeaderCell>
-                            <Table.HeaderCell collapsing textAlign='center'>Adjusted Cost</Table.HeaderCell>
+                            <Table.HeaderCell collapsing textAlign='right'>Cost Price</Table.HeaderCell>
+                            <Table.HeaderCell collapsing textAlign='right'>Selling Price</Table.HeaderCell>
+                            <Table.HeaderCell collapsing textAlign='right'>Shipping</Table.HeaderCell>
+                            <Table.HeaderCell collapsing textAlign='right'>Adjusted Cost</Table.HeaderCell>
                         </Table.Row>
                     </Table.Header>
 
-                    <Table.Body key="osBody">
-                        {formData.items.map((item, i) => {
-                            var selectedItem = {}
-                            itemOptions.forEach((element) => {
-                                if (element.itemId === item.itemId) {
-                                    selectedItem = element;
-                                    return;
-                                }
-                            });
+                    <Table.Body key="ohBody">
+                        {orderHistory.map((item, i) => {
+                            var imageUrl = `http://${CONST.HOST}:9000/${item.dropId}/${item.image}`
                             return ([
                                 <Table.Row key={i}>
-                                    <Table.Cell collapsing textAlign='left'>{selectedItem.name}</Table.Cell>
+                                    <Table.Cell collapsing textAlign='left'>{item.dropId}</Table.Cell>
+                                    <Table.Cell collapsing textAlign='left'>{item.name}</Table.Cell>
+                                    <Table.Cell collapsing textAlign='center'><img height={'50px'} src={imageUrl} /></Table.Cell>
                                     <Table.Cell collapsing textAlign='center'>{item.size}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='right'>{selectedItem.costPrice}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='right'>{selectedItem.sellingPrice}</Table.Cell>
-                                    <Table.Cell collapsing textAlign='right'>{selectedItem.shipping}</Table.Cell>
+                                    <Table.Cell collapsing textAlign='right'>{item.costPrice}</Table.Cell>
+                                    <Table.Cell collapsing textAlign='right'>{item.sellingPrice}</Table.Cell>
+                                    <Table.Cell collapsing textAlign='right'>{item.shipping}</Table.Cell>
                                     <Table.Cell collapsing textAlign='right'>{item.adjustedCost}</Table.Cell>
                                 </Table.Row>
                             ])
                         })}
 
+                        <Table.Row>
+                            <Table.Cell colSpan={4} textAlign="right">
+                                <Space wrap>
+                                    {((totalSelling + totalAdjustedCost + totalShipping) > totalCost) ? <Tag color="green">PROFIT</Tag> : <Tag color="red">LOSS</Tag>}
+                                    Total
+                                </Space>
+                            </Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalCost}</Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalSelling}</Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalShipping}</Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right">₹ {totalAdjustedCost}</Table.Cell>
+                        </Table.Row>
 
+                        <Table.Row>
+                            <Table.Cell colSpan={4} textAlign="right">
+                                <strong>Grand Total</strong>
+                            </Table.Cell>
+                            <Table.Cell colSpan={1} textAlign="right"><strong>₹ {totalCost}</strong></Table.Cell>
+                            <Table.Cell colSpan={3} textAlign="center"><strong>₹ {totalSelling + totalAdjustedCost + totalShipping}</strong></Table.Cell>
+                        </Table.Row>
                     </Table.Body>
                 </Table>
-            </Segment>
+            </Segment>}
+
+            {formData.items.length > 0 &&
+                <Segment>
+                    <Table celled striped>
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.HeaderCell colSpan='7' textAlign='left'>Order Summary</Table.HeaderCell>
+                            </Table.Row>
+                            <Table.Row>
+                                <Table.HeaderCell textAlign='center'>Name</Table.HeaderCell>
+                                <Table.HeaderCell textAlign='center'>Image</Table.HeaderCell>
+                                <Table.HeaderCell collapsing textAlign='center'>Size</Table.HeaderCell>
+                                <Table.HeaderCell collapsing textAlign='center'>Cost Price</Table.HeaderCell>
+                                <Table.HeaderCell collapsing textAlign='center'>Selling Price</Table.HeaderCell>
+                                <Table.HeaderCell collapsing textAlign='center'>Shipping</Table.HeaderCell>
+                                <Table.HeaderCell collapsing textAlign='center'>Adjusted Cost</Table.HeaderCell>
+                            </Table.Row>
+                        </Table.Header>
+
+                        <Table.Body key="osBody">
+                            {formData.items.map((item, i) => {
+                                var selectedItem = {}
+                                itemOptions.forEach((element) => {
+                                    if (element.itemId === item.itemId) {
+                                        selectedItem = element;
+                                        return;
+                                    }
+                                });
+                                var imageUrl = `http://${CONST.HOST}:9000/${formData.dropId}/${selectedItem.image}`
+
+                                return ([
+                                    <Table.Row key={i}>
+                                        <Table.Cell collapsing textAlign='left'>{selectedItem.name}</Table.Cell>
+                                        <Table.Cell collapsing textAlign='center'><img height={'50px'} src={imageUrl} /></Table.Cell>
+                                        <Table.Cell collapsing textAlign='center'>{item.size}</Table.Cell>
+                                        <Table.Cell collapsing textAlign='right'>{selectedItem.costPrice}</Table.Cell>
+                                        <Table.Cell collapsing textAlign='right'>{selectedItem.sellingPrice}</Table.Cell>
+                                        <Table.Cell collapsing textAlign='right'>{selectedItem.shipping}</Table.Cell>
+                                        <Table.Cell collapsing textAlign='right'>{item.adjustedCost}</Table.Cell>
+                                    </Table.Row>
+                                ])
+                            })}
+
+
+                        </Table.Body>
+                    </Table>
+                </Segment>
+            }
         </Grid.Column>
     );
 }
